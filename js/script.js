@@ -1,3 +1,31 @@
+// ==================== NOTIFICAÇÕES MODERNAS ====================
+function showMessage(message, type = 'info') {
+  const toast = document.getElementById('toastMessage');
+  if (!toast) return;
+  toast.textContent = message;
+  toast.className = `toast-message ${type} show`;
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 3000);
+}
+
+let confirmCallback = null;
+function showConfirm(message, callback) {
+  const modal = document.getElementById('confirmModal');
+  if (!modal) return;
+  document.getElementById('confirmMessage').textContent = message;
+  confirmCallback = callback;
+  modal.style.display = 'flex';
+  document.getElementById('confirmYesBtn').onclick = () => {
+    modal.style.display = 'none';
+    if (confirmCallback) confirmCallback(true);
+  };
+  document.getElementById('confirmNoBtn').onclick = () => {
+    modal.style.display = 'none';
+    if (confirmCallback) confirmCallback(false);
+  };
+}
+
 // ==================== LÓGICA DE DADOS (API IBGE) ====================
 async function carregarEstados() {
   try {
@@ -24,6 +52,7 @@ async function carregarEstados() {
 
   } catch (e) {
     console.error('Erro ao carregar UFs do IBGE:', e);
+    showMessage('Erro ao carregar estados da API IBGE', 'error');
   }
 }
 
@@ -84,9 +113,12 @@ function replicateToSocial() {
   if (social.dataset.manual !== 'true') social.value = oficial.value;
 }
 
-document.getElementById('form:nome').addEventListener('input', function() {
-  this.dataset.manual = (this.value !== document.getElementById('form:nomeOficial').value) ? 'true' : 'false';
-});
+const nomeSocialInput = document.getElementById('form:nome');
+if (nomeSocialInput) {
+  nomeSocialInput.addEventListener('input', function() {
+    this.dataset.manual = (this.value !== document.getElementById('form:nomeOficial').value) ? 'true' : 'false';
+  });
+}
 
 function isFilled(elem) {
   if (!elem) return false;
@@ -135,6 +167,31 @@ function checkSection(accId) {
     updateSectionStatus('acc4', 'status4', completo);
     if (completo) forceUnlock('acc5');
   }
+  else if (accId === 'acc3') {
+    const exigencia = document.getElementById('acc3')?.dataset.exigencia;
+    if (!exigencia) {
+      completo = false;
+    } else if (exigencia === 'fundamental') {
+      const anoFund = document.getElementById('form:anoFund');
+      const escolaFund = document.getElementById('form:escolaFund');
+      const tipoFund = document.getElementById('form:tipoEscolaFund');
+      completo = isFilled(anoFund) && isFilled(escolaFund) && isFilled(tipoFund);
+    } else if (exigencia === 'medio') {
+      const anoMedio = document.getElementById('form:anoMedio');
+      const escolaMedio = document.getElementById('form:escolaMedio');
+      const tipoMedio = document.getElementById('form:tipoEscolaMedio');
+      completo = isFilled(anoMedio) && isFilled(escolaMedio) && isFilled(tipoMedio);
+    } else if (exigencia === 'superior') {
+      const anoSup = document.getElementById('form:anoSup');
+      const instSup = document.getElementById('form:instSup');
+      const tipoSup = document.getElementById('form:tipoInstSup');
+      completo = isFilled(anoSup) && isFilled(instSup) && isFilled(tipoSup);
+    } else {
+      completo = false;
+    }
+    updateSectionStatus('acc3', 'status3', completo);
+    if (completo) forceUnlock('acc4');
+  }
   else if (accId === 'acc5') {
     const cep = document.getElementById('form:endCEP');
     const logr = document.getElementById('form:logradouro');
@@ -179,11 +236,19 @@ function updateSectionStatus(accId, statusId, complete) {
 
 function forceUnlock(id) {
   const acc = document.getElementById(id);
+  if (!acc) return;
+  
+  // Impede desbloqueio da acc3 se não houver nível selecionado
+  if (id === 'acc3') {
+    const nivel = document.getElementById('nivelCurso')?.value;
+    if (!nivel) return;
+  }
+
   if (acc.classList.contains('locked')) {
     acc.classList.remove('locked');
     const statusId = 'status' + id.replace('acc', '');
     const statusEl = document.getElementById(statusId);
-    if (statusEl.textContent === 'Bloqueado') {
+    if (statusEl && statusEl.textContent === 'Bloqueado') {
       statusEl.textContent = 'Pendente';
       statusEl.className = 'status incomplete';
     }
@@ -192,7 +257,7 @@ function forceUnlock(id) {
 
 function toggleAccordion(id) {
   const acc = document.getElementById(id);
-  if (acc.classList.contains('locked')) return;
+  if (acc && acc.classList.contains('locked')) return;
   acc.classList.toggle('open');
 }
 
@@ -207,7 +272,7 @@ function updateProgressDots() {
   }
 }
 
-// ==================== CONFIGURAÇÃO DO CURSO (CADASTRO SEQUENCIAL) ====================
+// ==================== CONFIGURAÇÃO DO CURSO ====================
 let courseLocked = false;
 
 function saveCourseConfig() {
@@ -232,7 +297,8 @@ function loadCourseConfig() {
     courseLocked = config.locked || false;
     applyLockState();
   } else {
-    showInitialModal();
+    courseLocked = false;
+    applyLockState();
   }
 }
 
@@ -240,10 +306,10 @@ function applyLockState() {
   const inputs = ['fixedCurso', 'fixedCurriculo', 'fixedTurma', 'fixedRegime'];
   inputs.forEach(id => {
     const input = document.getElementById(id);
-    input.disabled = courseLocked;
+    if (input) input.disabled = courseLocked;
   });
   const lockBtn = document.getElementById('lockToggleBtn');
-  lockBtn.textContent = courseLocked ? '🔒' : '🔓';
+  if (lockBtn) lockBtn.textContent = courseLocked ? '🔒' : '🔓';
 }
 
 function toggleCourseLock() {
@@ -253,22 +319,24 @@ function toggleCourseLock() {
     const turma = document.getElementById('fixedTurma').value.trim();
     const regime = document.getElementById('fixedRegime').value.trim();
     if (!curso || !curriculo || !turma || !regime) {
-      alert('Preencha todos os campos do curso antes de travar!');
+      showMessage('Preencha todos os campos do curso antes de travar!', 'error');
       return;
     }
   }
   courseLocked = !courseLocked;
   applyLockState();
   saveCourseConfig();
+  showMessage(courseLocked ? 'Curso travado' : 'Curso destravado', 'info');
 }
 
 function showInitialModal() {
   const modal = document.getElementById('initialModal');
-  modal.style.display = 'flex';
-  document.getElementById('modalCurso').value = '';
-  document.getElementById('modalCurriculo').value = '';
-  document.getElementById('modalTurma').value = '';
-  document.getElementById('modalRegime').value = '';
+  if (modal) modal.style.display = 'flex';
+}
+
+function fecharModalCurso() {
+  const modal = document.getElementById('initialModal');
+  if (modal) modal.style.display = 'none';
 }
 
 function saveModalAndLock() {
@@ -277,7 +345,7 @@ function saveModalAndLock() {
   const turma = document.getElementById('modalTurma').value.trim();
   const regime = document.getElementById('modalRegime').value.trim();
   if (!curso || !curriculo || !turma || !regime) {
-    alert('Preencha todos os campos!');
+    showMessage('Preencha todos os campos!', 'error');
     return;
   }
   document.getElementById('fixedCurso').value = curso;
@@ -287,13 +355,132 @@ function saveModalAndLock() {
   courseLocked = true;
   applyLockState();
   saveCourseConfig();
-  document.getElementById('initialModal').style.display = 'none';
+  fecharModalCurso();
+  showMessage('Curso configurado e travado com sucesso!', 'success');
+}
+
+// ==================== LÓGICA DE MOSTRAR OS CAMPOS CONFORME O NÍVEL ====================
+function atualizarExigenciaEscolar() {
+  const nivel = document.getElementById('nivelCurso').value;
+  const acc3 = document.getElementById('acc3');
+  if (!acc3) return;
+
+  const cardFundamental = document.querySelector('#acc3 .edu-cards-container .edu-card:first-child');
+  const cardMedio = document.querySelector('#acc3 .edu-cards-container .edu-card:nth-child(2)');
+  const cardSuperior = document.querySelector('#acc3 .edu-cards-container .edu-card:nth-child(3)');
+
+  // Salva o nível escolhido para persistir
+  localStorage.setItem('nivelCursoTemporario', nivel);
+
+  // Se não há nível selecionado, bloqueia a seção e mostra todos os cards
+  if (!nivel) {
+    if (cardFundamental) cardFundamental.style.display = 'flex';
+    if (cardMedio) cardMedio.style.display = 'flex';
+    if (cardSuperior) cardSuperior.style.display = 'flex';
+    acc3.dataset.exigencia = '';
+    if (!acc3.classList.contains('locked')) {
+      acc3.classList.add('locked');
+      updateSectionStatus('acc3', 'status3', false);
+    }
+    return;
+  }
+
+  // Se tem nível, desbloqueia a seção (caso esteja bloqueada)
+  if (acc3.classList.contains('locked')) {
+    acc3.classList.remove('locked');
+    const statusEl = document.getElementById('status3');
+    if (statusEl && statusEl.textContent === 'Bloqueado') {
+      statusEl.textContent = 'Pendente';
+      statusEl.className = 'status incomplete';
+    }
+  }
+
+  // Mostra todos inicialmente
+  if (cardFundamental) cardFundamental.style.display = 'flex';
+  if (cardMedio) cardMedio.style.display = 'flex';
+  if (cardSuperior) cardSuperior.style.display = 'flex';
+
+  if (nivel === 'fic' || nivel === 'tecnico') {
+    if (cardMedio) cardMedio.style.display = 'none';
+    if (cardSuperior) cardSuperior.style.display = 'none';
+    acc3.dataset.exigencia = 'fundamental';
+  } 
+  else if (nivel === 'subsequente' || nivel === 'superior') {
+    if (cardFundamental) cardFundamental.style.display = 'none';
+    if (cardSuperior) cardSuperior.style.display = 'none';
+    acc3.dataset.exigencia = 'medio';
+  }
+  else if (nivel === 'pos') {
+    if (cardFundamental) cardFundamental.style.display = 'none';
+    if (cardMedio) cardMedio.style.display = 'none';
+    acc3.dataset.exigencia = 'superior';
+  }
+  else {
+    acc3.dataset.exigencia = '';
+  }
+
+  checkSection('acc3');
+}
+
+// ==================== EDIÇÃO DE CADASTROS ====================
+let editingIndex = null;
+
+function cancelarEdicao() {
+  if (editingIndex !== null) {
+    editingIndex = null;
+    showMessage('Edição cancelada', 'info');
+  }
+}
+
+function editarAluno(index) {
+  const cadastros = JSON.parse(localStorage.getItem('alunosSIGAA')) || [];
+  const aluno = cadastros[index];
+  if (!aluno) return;
+  
+  editingIndex = index;
+  
+  // Preenche os campos do curso fixo
+  document.getElementById('fixedCurso').value = aluno.cursoFixo || '';
+  document.getElementById('fixedCurriculo').value = aluno.curriculoFixo || '';
+  document.getElementById('fixedTurma').value = aluno.turmaFixa || '';
+  document.getElementById('fixedRegime').value = aluno.regimeFixo || '';
+  courseLocked = true;
+  applyLockState();
+  
+  // Preenche todos os outros campos do formulário
+  for (const [key, value] of Object.entries(aluno)) {
+    const element = document.getElementById(key);
+    if (element) {
+      if (element.type === 'checkbox') {
+        element.checked = (value === 'SIM' || value === true);
+      } else if (element.type === 'radio') {
+        const radio = document.querySelector(`input[name="${key}"][value="${value}"]`);
+        if (radio) radio.checked = true;
+      } else {
+        element.value = value;
+      }
+    }
+  }
+  
+  // Recupera necessidades especiais (string separada por vírgula)
+  const necessidades = aluno.necessidadesEspeciais ? aluno.necessidadesEspeciais.split(', ') : [];
+  document.querySelectorAll('input[type="checkbox"][name="necessidade"]').forEach(cb => {
+    cb.checked = necessidades.includes(cb.value);
+  });
+  
+  // Atualiza status das seções
+  for (let i = 1; i <= 7; i++) {
+    checkSection(`acc${i}`);
+  }
+  
+  fecharDashboard();
+  showMessage(`Editando aluno: ${aluno['form:nomeOficial']}`, 'info');
 }
 
 // ==================== SALVAMENTO, EXPORTAÇÃO, DASHBOARD ====================
 function validateAll() {
   if (!courseLocked) {
-    alert('⚠️ Antes de salvar, configure e trave os dados do curso (painel "Cadastro sequencial").');
+    showMessage('Configure e trave os dados do curso antes de salvar.', 'error');
     return;
   }
   const curso = document.getElementById('fixedCurso').value.trim();
@@ -301,18 +488,18 @@ function validateAll() {
   const turma = document.getElementById('fixedTurma').value.trim();
   const regime = document.getElementById('fixedRegime').value.trim();
   if (!curso || !curriculo || !turma || !regime) {
-    alert('Preencha todos os campos do curso antes de salvar!');
+    showMessage('Preencha todos os campos do curso antes de salvar!', 'error');
     return;
   }
 
-  const idsObrigatorios = ['status1', 'status2', 'status4', 'status5', 'status7']; 
+  const idsObrigatorios = ['status1', 'status2', 'status3', 'status4', 'status5', 'status7']; 
   let allValid = true;
   idsObrigatorios.forEach(id => {
     if(document.getElementById(id).textContent !== 'Concluído') allValid = false;
   });
 
   if (!allValid) {
-    alert('⚠️ Preencha todas as seções obrigatórias (Marcadas com *) antes de prosseguir.');
+    showMessage('Preencha todas as seções obrigatórias (marcadas com *)', 'error');
     return;
   }
 
@@ -355,10 +542,15 @@ function validateAll() {
   aluno['regimeFixo'] = regime;
 
   let cadastros = JSON.parse(localStorage.getItem('alunosSIGAA')) || [];
-  cadastros.push(aluno);
+  if (editingIndex !== null) {
+    cadastros[editingIndex] = aluno;
+    editingIndex = null;
+    showMessage('Cadastro atualizado com sucesso!', 'success');
+  } else {
+    cadastros.push(aluno);
+    showMessage(`✅ Cadastro salvo! Total: ${cadastros.length}`, 'success');
+  }
   localStorage.setItem('alunosSIGAA', JSON.stringify(cadastros));
-
-  alert(`✅ Cadastro salvo!\nTotal de alunos na fila: ${cadastros.length}`);
   document.getElementById('mainForm').reset();
   window.location.reload(); 
 }
@@ -368,7 +560,7 @@ function exportarParaJSON() {
   const config = localStorage.getItem('cursoConfig');
   
   if (!cadastros || cadastros === '[]') {
-    alert("Não há nenhum aluno cadastrado para exportar.");
+    showMessage("Não há nenhum aluno cadastrado para exportar.", 'error');
     return;
   }
 
@@ -390,20 +582,26 @@ function exportarParaJSON() {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  showMessage('Arquivo JSON exportado com sucesso!', 'success');
 }
 
 function abrirDashboard() {
-  document.getElementById('dashboardModal').style.display = 'flex';
-  renderizarTabela();
+  const modal = document.getElementById('dashboardModal');
+  if (modal) {
+    modal.style.display = 'flex';
+    renderizarTabela();
+  }
 }
 
 function fecharDashboard() {
-  document.getElementById('dashboardModal').style.display = 'none';
+  const modal = document.getElementById('dashboardModal');
+  if (modal) modal.style.display = 'none';
 }
 
 function renderizarTabela() {
   const cadastros = JSON.parse(localStorage.getItem('alunosSIGAA')) || [];
   const tbody = document.getElementById('tabelaAlunosBody');
+  if (!tbody) return;
   tbody.innerHTML = '';
 
   if (cadastros.length === 0) {
@@ -422,6 +620,7 @@ function renderizarTabela() {
       <td>${cpf}</td>
       <td>${nome}</td>
       <td>
+        <button class="btn-danger" onclick="editarAluno(${index})">✏️ Editar</button>
         <button class="btn-danger" onclick="excluirAluno(${index})">🗑️ Excluir</button>
        </td>
     `;
@@ -430,12 +629,15 @@ function renderizarTabela() {
 }
 
 function excluirAluno(index) {
-  if (confirm('Tem certeza que deseja excluir este cadastro?')) {
-    let cadastros = JSON.parse(localStorage.getItem('alunosSIGAA')) || [];
-    cadastros.splice(index, 1);
-    localStorage.setItem('alunosSIGAA', JSON.stringify(cadastros));
-    renderizarTabela(); 
-  }
+  showConfirm('Tem certeza que deseja excluir este cadastro?', (confirmed) => {
+    if (confirmed) {
+      let cadastros = JSON.parse(localStorage.getItem('alunosSIGAA')) || [];
+      cadastros.splice(index, 1);
+      localStorage.setItem('alunosSIGAA', JSON.stringify(cadastros));
+      renderizarTabela();
+      showMessage('Cadastro excluído', 'success');
+    }
+  });
 }
 
 // ==================== MODO DESENVOLVEDOR (MOCK DATA) ====================
@@ -462,9 +664,12 @@ function preencherDadosFicticios() {
   document.getElementById('form:naturMunicipio').value = "BELÉM";
   document.getElementById('form:ufEnd').value = "PA";
   document.getElementById('form:endMunicipio').value = "SANTARÉM";
-  document.querySelector('input[name="form:sexo"][value="M"]').checked = true;
-  document.querySelector('input[name="form:zonaResidencia"][value="urbana"]').checked = true;
-  document.querySelector('input[value="Altas habilidades/superdotação"]').checked = true;
+  const sexoM = document.querySelector('input[name="form:sexo"][value="M"]');
+  if (sexoM) sexoM.checked = true;
+  const zonaUrbana = document.querySelector('input[name="form:zonaResidencia"][value="urbana"]');
+  if (zonaUrbana) zonaUrbana.checked = true;
+  const necessidadeCb = document.querySelector('input[value="Altas habilidades/superdotação"]');
+  if (necessidadeCb) necessidadeCb.checked = true;
   document.getElementById('form:deficienciaTemporaria').checked = true;
   
   if (!courseLocked) {
@@ -477,12 +682,11 @@ function preencherDadosFicticios() {
     saveCourseConfig();
   }
 
-  const secoes = ['acc1', 'acc2', 'acc3', 'acc4', 'acc5', 'acc6', 'acc7'];
-  secoes.forEach(secao => {
-    checkSection(secao);
-  });
+  for (let i = 1; i <= 7; i++) {
+    checkSection(`acc${i}`);
+  }
 
-  console.log("✅ Dados fictícios injetados e curso travado!");
+  showMessage('Dados fictícios injetados e curso travado!', 'success');
 }
 
 // ==================== INICIALIZAÇÃO ====================
@@ -492,5 +696,22 @@ window.onload = () => {
   checkSection('acc1');
   for(let i = 2; i <= 7; i++) {
     forceUnlock('acc' + i);
+  }
+  
+  // Inicializa a exibição do histórico escolar baseado no nível salvo
+  const nivelSalvo = localStorage.getItem('nivelCursoTemporario');
+  if (nivelSalvo) {
+    const selectNivel = document.getElementById('nivelCurso');
+    if (selectNivel) {
+      selectNivel.value = nivelSalvo;
+      atualizarExigenciaEscolar();
+    }
+  } else {
+    // Se não há nível salvo, garante que a acc3 fique bloqueada
+    const acc3 = document.getElementById('acc3');
+    if (acc3 && !acc3.classList.contains('locked')) {
+      acc3.classList.add('locked');
+      updateSectionStatus('acc3', 'status3', false);
+    }
   }
 };
