@@ -478,6 +478,9 @@ function editarAluno(index) {
 }
 
 // ==================== SALVAMENTO, EXPORTAÇÃO, DASHBOARD ====================
+// Limpa mensagem de erro anterior
+const errorDiv = document.getElementById('formErrorMessage');
+if (errorDiv) errorDiv.style.display = 'none';
 function validateAll() {
   if (!courseLocked) {
     showMessage('Configure e trave os dados do curso antes de salvar.', 'error');
@@ -499,9 +502,21 @@ function validateAll() {
   });
 
   if (!allValid) {
+  const errorDiv = document.getElementById('formErrorMessage');
+  if (errorDiv) {
+    errorDiv.textContent = '⚠️ Preencha todas as seções obrigatórias (marcadas com *) antes de salvar.';
+    errorDiv.style.display = 'block';
+    // Rolar a página até a mensagem
+    errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Esconder a mensagem após 5 segundos
+    setTimeout(() => {
+      errorDiv.style.display = 'none';
+    }, 5000);
+  } else {
     showMessage('Preencha todas as seções obrigatórias (marcadas com *)', 'error');
-    return;
   }
+  return;
+}
 
   const formElements = document.getElementById('mainForm').elements;
   const aluno = {};
