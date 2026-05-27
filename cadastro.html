@@ -16,7 +16,7 @@
 
 <!-- Botões flutuantes laterais -->
 <div class="floating-buttons">
-  <button class="btn btn-secondary" type="button" onclick="alert('Operação cancelada.')">✖ Cancelar</button>
+  <button class="btn btn-secondary" type="button" onclick="cancelarEdicao()">✖ Cancelar Edição</button>
   <button class="btn btn-secondary" type="button" onclick="abrirDashboard()">🗃️ Gerenciar Cadastros</button>
   <button class="btn btn-secondary" type="button" onclick="exportarParaJSON()">📥 Exportar JSON</button>
   <button class="btn btn-primary" type="button" onclick="validateAll()">Salvar Cadastro →</button>
@@ -31,7 +31,10 @@
   <div class="course-fixed-panel">
     <div class="panel-header">
       <span class="panel-title">🎓 Cadastro sequencial</span>
-      <button id="lockToggleBtn" class="lock-button" onclick="toggleCourseLock()">🔓</button>
+      <div style="display: flex; gap: 0.5rem;">
+        <button class="btn btn-secondary" style="padding: 0.2rem 0.8rem; font-size: 0.8rem;" onclick="showInitialModal()">⚙️ Configurar</button>
+        <button id="lockToggleBtn" class="lock-button" onclick="toggleCourseLock()">🔓</button>
+      </div>
     </div>
     <div class="course-fixed-fields">
       <div class="field-group">
@@ -738,11 +741,13 @@
       </div>
     </div>
     <div class="modal-buttons">
+      <button class="btn btn-secondary" onclick="fecharModalCurso()">Fechar</button>
       <button class="btn btn-primary" onclick="saveModalAndLock()">Travar e Iniciar</button>
     </div>
   </div>
 </div>
 
+<!-- Dashboard com edição -->
 <div id="dashboardModal" class="dashboard-overlay" style="display: none;">
   <div class="dashboard-content form-container">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
@@ -761,6 +766,21 @@
         </thead>
         <tbody id="tabelaAlunosBody"></tbody>
       </table>
+    </div>
+  </div>
+</div>
+
+<!-- Toast de notificação -->
+<div id="toastMessage" class="toast-message"></div>
+
+<!-- Modal de confirmação personalizado -->
+<div id="confirmModal" class="modal-overlay" style="display: none;">
+  <div class="modal-content" style="max-width: 400px;">
+    <h3 id="confirmTitle">Confirmar</h3>
+    <p id="confirmMessage">Tem certeza?</p>
+    <div class="modal-buttons" style="justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
+      <button class="btn btn-secondary" id="confirmNoBtn">Cancelar</button>
+      <button class="btn btn-primary" id="confirmYesBtn">Sim</button>
     </div>
   </div>
 </div>
