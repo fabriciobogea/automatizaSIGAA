@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+  <title>Dados Pessoais · SIGAA Moderno</title>
+  <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+
+<!-- Menu superior -->
+<nav class="top-menu">
+  <a href="index.html" class="btn btn-secondary" style="padding: 0.5rem 1rem; text-decoration: none;">🏠 Voltar ao Menu</a>
+</nav>
+
+<!-- Botões flutuantes laterais -->
+<div class="floating-buttons">
+  <button class="btn btn-secondary" type="button" onclick="cancelarEdicao()">✖ Cancelar Edição</button>
+  <button class="btn btn-secondary" type="button" onclick="abrirDashboard()">🗃️ Gerenciar Cadastros</button>
+  <button class="btn btn-secondary" type="button" onclick="exportarParaJSON()">📥 Exportar JSON</button>
+  <button class="btn btn-primary" type="button" onclick="validateAll()">Salvar Cadastro →</button>
+  <button class="btn btn-secondary" type="button" onclick="preencherDadosFicticios()">🧪 Preencher Teste</button>
+</div>
+
+<div class="form-container">
+  <h1>📋 Dados Pessoais</h1>
+  <p class="subtitle">Preencha as seções obrigatórias para desbloquear as demais</p>
+
+  <!-- Painel fixo de configuração do curso (Cadastro sequencial) -->
+  <div class="course-fixed-panel">
+    <div class="panel-header">
+      <span class="panel-title">🎓 Cadastro sequencial</span>
+      <div style="display: flex; gap: 0.5rem;">
+        <button class="btn btn-secondary" style="padding: 0.2rem 0.8rem; font-size: 0.8rem;" onclick="showInitialModal()">⚙️ Configurar</button>
+        <button id="lockToggleBtn" class="lock-button" onclick="toggleCourseLock()">🔓</button>
+      </div>
+    </div>
+    <div class="course-fixed-fields">
+      <div class="field-group">
+        <label>Curso <span class="required-mark">*</span></label>
+        <input type="text" id="fixedCurso" placeholder="Ex: TÉCNICO EM INFORMÁTICA">
+      </div>
+      <div class="field-group">
+        <label>Currículo <span class="required-mark">*</span></label>
+        <input type="text" id="fixedCurriculo" placeholder="Ex: INFO-2026">
+      </div>
+      <div class="field-group">
+        <label>Turma de Entrada <span class="required-mark">*</span></label>
+        <input type="text" id="fixedTurma" placeholder="Ex: 2026.1">
+      </div>
+      <div class="field-group">
+        <label>Regime do Aluno <span class="required-mark">*</span></label>
+        <input type="text" id="fixedRegime" placeholder="Ex: SEMESTRAL">
+      </div>
+      <!-- NOVO CAMPO: Nível de Ensino (apenas para controle de interface) -->
+      <div class="field-group">
+        <label>Nível do Curso <span class="required-mark">*</span></label>
+        <select id="nivelCurso" onchange="atualizarExigenciaEscolar()">
+          <option value="">-- SELECIONE --</option>
+          <option value="fic">FIC (Ensino Fundamental)</option>
+          <option value="tecnico">Técnico (Ensino Fundamental)</option>
+          <option value="subsequente">Subsequente (Ensino Médio)</option>
+          <option value="superior">Superior (Ensino Médio)</option>
+          <option value="pos">Pós-Graduação (Graduação)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="progress-indicator" id="progressBar">
+    <span class="progress-dot active" id="dot1"></span> Identificação
+    <span class="progress-dot" id="dot2"></span> Filiação
+    <span class="progress-dot" id="dot3"></span> Escolaridade
+    <span class="progress-dot" id="dot4"></span> Documentos
+    <span class="progress-dot" id="dot5"></span> Endereço
+    <span class="progress-dot" id="dot6"></span> Necessidades
+    <span class="progress-dot" id="dot7"></span> Curso
+  </div>
+
+  <form id="mainForm" onsubmit="return false;">
+    
+    <div class="accordion open" id="acc1">
+      <div class="accordion-header" onclick="toggleAccordion('acc1')">
+        <div><span class="icon">🆔</span> Identificação Básica</div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <span class="status incomplete" id="status1">Pendente</span>
+          <span class="toggle-icon">▼</span>
+        </div>
+      </div>
+      <div class="accordion-body">
+        <div class="inner">
+          <div class="form-grid">
+            <div class="field-group">
+              <label>CPF <span class="required-mark">*</span></label>
+              <input id="form:txtCPF" name="form:txtCPF" type="text" maxlength="14" placeholder="000.000.000-00" oninput="aplicarMascaraCPF(this); checkSection('acc1');">
+            </div>
+            <div class="field-group" style="justify-content: flex-end;">
+              <label style="font-weight: 500;">
+                <input id="form:internacional" name="form:internacional" type="checkbox" onchange="checkSection('acc1')"> Estrangeiro sem CPF
+              </label>
+            </div>
+            <div class="field-group full-width">
+              <label>Nome Oficial <span class="required-mark">*</span></label>
+              <input id="form:nomeOficial" name="form:nomeOficial" type="text" maxlength="80" placeholder="NOME COMPLETO OFICIAL" oninput="replicateToSocial(); checkSection('acc1');">
+            </div>
+            <div class="field-group full-width">
+              <label>Nome Social <span class="required-mark">*</span></label>
+              <input id="form:nome" name="form:nome" type="text" maxlength="80" placeholder="NOME SOCIAL" oninput="checkSection('acc1')">
+            </div>
+            <div class="field-group">
+              <label>E-Mail</label>
+              <input id="form:email" name="form:email" type="email" maxlength="80" placeholder="email@exemplo.com">
+            </div>
+            <div class="field-group">
+              <label>Emancipado</label>
+              <div class="radio-group">
+                <label><input type="radio" name="form:emancipado" value="false" checked> Não</label>
+                <label><input type="radio" name="form:emancipado" value="true"> Sim</label>
+              </div>
+            </div>
+            <div class="field-group">
+              <label>Sexo</label>
+              <div class="radio-group">
+                <label><input type="radio" name="form:sexo" value="M"> Masculino</label>
+                <label><input type="radio" name="form:sexo" value="F"> Feminino</label>
+              </div>
+            </div>
+            <div class="field-group">
+              <label>Data de Nascimento <span class="required-mark">*</span></label>
+              <input id="form:Nascimento" name="form:Nascimento" type="text" maxlength="10" placeholder="DD/MM/AAAA" oninput="aplicarMascaraData(this); checkSection('acc1');">
+            </div>
+            <div class="field-group">
+              <label>Estado Civil</label>
+              <select id="form:estadoCivil" name="form:estadoCivil">
+                <option value="0">-- SELECIONE --</option>
+                <option value="1">SOLTEIRO(A)</option>
+                <option value="2">CASADO(A)</option>
+                <option value="9">DIVORCIADO(A)</option>
+                <option value="5">VIÚVO(A)</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label>Raça/Cor</label>
+              <select id="form:raca" name="form:raca">
+                <option value="0">-- SELECIONE --</option>
+                <option value="1">BRANCA</option>
+                <option value="2">PARDA</option>
+                <option value="3">PRETA</option>
+                <option value="5">AMARELA</option>
+                <option value="4">INDÍGENA</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label>Tipo Sanguíneo</label>
+              <select id="form:tipoSanguineo" name="form:tipoSanguineo">
+                <option value="">-- SELECIONE --</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion locked" id="acc2">
+      <div class="accordion-header" onclick="toggleAccordion('acc2')">
+        <div><span class="icon">👪</span> Filiação</div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <span class="status incomplete" id="status2">Bloqueado</span>
+          <span class="toggle-icon">▼</span>
+        </div>
+      </div>
+      <div class="accordion-body">
+        <div class="inner">
+          <div class="form-grid">
+            <div class="field-group full-width">
+              <label>Filiação 1 <span class="required-mark">*</span></label>
+              <input id="form:mae" name="form:mae" type="text" placeholder="NOME" oninput="checkSection('acc2')">
+            </div>
+            <div class="field-group">
+              <label>Tipo</label>
+              <select id="form:tipoFiliacao1" name="form:tipoFiliacao1">
+                <option value="1">MÃE</option>
+                <option value="2">PAI</option>
+                <option value="3">OUTRO</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label>CPF</label>
+              <input id="form:cpfDaFiliacao1" name="form:cpfDaFiliacao1" type="text" maxlength="14" placeholder="000.000.000-00" oninput="aplicarMascaraCPF(this)">
+            </div>
+            
+            <hr class="section-divider full-width">
+
+            <div class="field-group full-width">
+              <label>Filiação 2</label>
+              <input id="form:pai" name="form:pai" type="text" placeholder="NOME">
+            </div>
+            <div class="field-group">
+              <label>Tipo</label>
+              <select id="form:tipoFiliacao2" name="form:tipoFiliacao2">
+                <option value="">-- SELECIONE --</option>
+                <option value="2">PAI</option>
+                <option value="1">MÃE</option>
+                <option value="3">OUTRO</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label>CPF</label>
+              <input id="form:cpfDaFiliacao2" name="form:cpfDaFiliacao2" type="text" maxlength="14" placeholder="000.000.000-00" oninput="aplicarMascaraCPF(this)">
+            </div>
+
+            <hr class="section-divider full-width">
+
+            <div class="field-group full-width">
+              <label>Filiação 3</label>
+              <input id="form:nomeFiliacao3" name="form:nomeFiliacao3" type="text" placeholder="NOME">
+            </div>
+            <div class="field-group">
+              <label>Tipo</label>
+              <select id="form:tipoFiliacao3" name="form:tipoFiliacao3">
+                <option value="">-- SELECIONE --</option>
+                <option value="3">OUTRO</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label>CPF</label>
+              <input id="form:cpfDaFiliacao3" name="form:cpfDaFiliacao3" type="text" maxlength="14" placeholder="000.000.000-00" oninput="aplicarMascaraCPF(this)">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion locked" id="acc3">
+      <div class="accordion-header" onclick="toggleAccordion('acc3')">
+        <div><span class="icon">🎓</span> Histórico Escolar</div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <span class="status incomplete" id="status3">Bloqueado</span>
+          <span class="toggle-icon">▼</span>
+        </div>
+      </div>
+      <div class="accordion-body">
+        <div class="inner">
+          <div class="edu-cards-container">
+            <div class="edu-card">
+              <h4>📘 Ensino Fundamental</h4>
+              <div class="field-group">
+                <label>Ano de Conclusão</label>
+                <input id="form:anoFund" name="form:anoFund" type="text" maxlength="4" placeholder="AAAA" oninput="this.value = this.value.replace(/\D/g, '')">
+              </div>
+              <div class="field-group">
+                <label>Escola</label>
+                <input id="form:escolaFund" name="form:escolaFund" type="text" placeholder="NOME DA ESCOLA">
+              </div>
+              <div class="field-group">
+                <label>Tipo de Instituição</label>
+                <select id="form:tipoEscolaFund" name="form:tipoEscolaFund">
+                  <option value="">-- SELECIONE --</option>
+                  <option value="PUB">Pública</option>
+                  <option value="PRI">Privada</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="edu-card">
+              <h4>📗 Ensino Médio</h4>
+              <div class="field-group">
+                <label>Ano de Conclusão</label>
+                <input id="form:anoMedio" name="form:anoMedio" type="text" maxlength="4" placeholder="AAAA" oninput="this.value = this.value.replace(/\D/g, '')">
+              </div>
+              <div class="field-group">
+                <label>Escola</label>
+                <input id="form:escolaMedio" name="form:escolaMedio" type="text" placeholder="NOME DA ESCOLA">
+              </div>
+              <div class="field-group">
+                <label>Tipo de Instituição</label>
+                <select id="form:tipoEscolaMedio" name="form:tipoEscolaMedio">
+                  <option value="">-- SELECIONE --</option>
+                  <option value="PUB">Pública</option>
+                  <option value="PRI">Privada</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="edu-card">
+              <h4>📙 Ensino Superior</h4>
+              <div class="field-group">
+                <label>Ano de Conclusão</label>
+                <input id="form:anoSup" name="form:anoSup" type="text" maxlength="4" placeholder="AAAA" oninput="this.value = this.value.replace(/\D/g, '')">
+              </div>
+              <div class="field-group">
+                <label>Instituição</label>
+                <input id="form:instSup" name="form:instSup" type="text" placeholder="NOME DA INSTITUIÇÃO">
+              </div>
+              <div class="field-group">
+                <label>Tipo de Instituição</label>
+                <select id="form:tipoInstSup" name="form:tipoInstSup">
+                  <option value="">-- SELECIONE --</option>
+                  <option value="PUB">Pública</option>
+                  <option value="PRI">Privada</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top: 2rem; text-align: right;">
+            <button type="button" class="btn btn-secondary" style="padding: 0.5rem 1.5rem;" onclick="checkSection('acc3'); if(document.getElementById('status3').textContent === 'Concluído') forceUnlock('acc4'); else showMessage('Preencha os campos exigidos para o nível selecionado.', 'error');">Confirmar & Avançar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion locked" id="acc4">
+      <div class="accordion-header" onclick="toggleAccordion('acc4')">
+        <div><span class="icon">🪪</span> Documentação & Naturalidade</div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <span class="status incomplete" id="status4">Bloqueado</span>
+          <span class="toggle-icon">▼</span>
+        </div>
+      </div>
+      <div class="accordion-body">
+        <div class="inner">
+          <div class="form-grid">
+            <div class="field-group full-width"><h3 style="font-size: 1rem; color: #475569;">Naturalidade</h3></div>
+            <div class="field-group">
+              <label>País <span class="required-mark">*</span></label>
+              <select id="form:naturPais" name="form:naturPais" onchange="checkSection('acc4')">
+                <option value="">-- SELECIONE --</option>
+                <option value="31">BRASIL</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label>UF Naturalidade <span class="required-mark">*</span></label>
+              <select id="form:ufIdNatur" name="form:ufIdNatur" onchange="atualizarMunicipios('form:ufIdNatur', 'listaNatMunicipio'); checkSection('acc4');">
+                <option value="-1">-- SELECIONE --</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label>Município <span class="required-mark">*</span></label>
+              <input id="form:naturMunicipio" name="form:naturMunicipio" list="listaNatMunicipio" placeholder="DIGITE OU SELECIONE" oninput="checkSection('acc4')">
+              <datalist id="listaNatMunicipio"></datalist>
+            </div>
+            <div class="field-group">
+              <label>Nacionalidade <span class="required-mark">*</span></label>
+              <input id="form:paisNacionalidade" name="form:paisNacionalidade" type="text" maxlength="50" value="BRASILEIRA" placeholder="BRASILEIRA" oninput="checkSection('acc4')">
+            </div>
+
+            <hr class="section-divider full-width">
+            
+            <div class="field-group full-width"><h3 style="font-size: 1rem; color: #475569;">Registro Geral (RG)</h3></div>
+            <div class="field-group">
+              <label>RG <span class="required-mark">*</span></label>
+              <input id="form:rg" name="form:rg" type="text" maxlength="15" placeholder="NÚMERO" oninput="checkSection('acc4')">
+            </div>
+            <div class="field-group">
+              <label>Órgão Expedição <span class="required-mark">*</span></label>
+              <input id="form:orgaoExpedicao" name="form:orgaoExpedicao" type="text" maxlength="20" placeholder="SSP/PC" oninput="checkSection('acc4')">
+            </div>
+            <div class="field-group">
+              <label>UF RG <span class="required-mark">*</span></label>
+              <select id="form:ufRG" name="form:ufRG" onchange="checkSection('acc4')">
+                <option value="-1">-- SELECIONE --</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label>Data Expedição RG <span class="required-mark">*</span></label>
+              <input id="form:Expedicao" name="form:Expedicao" type="text" maxlength="10" placeholder="DD/MM/AAAA" oninput="aplicarMascaraData(this); checkSection('acc4');">
+            </div>
+
+            <hr class="section-divider full-width">
+
+            <div class="field-group full-width"><h3 style="font-size: 1rem; color: #475569;">Outros Documentos</h3></div>
+            <div class="field-group">
+              <label>Título de Eleitor</label>
+              <input id="form:numeroTitulo" name="form:numeroTitulo" type="text" maxlength="12" placeholder="NÚMERO">
+            </div>
+            <div class="field-group">
+              <label>Zona</label>
+              <input id="form:zonaTitulo" name="form:zonaTitulo" type="text" maxlength="4" placeholder="ZONA">
+            </div>
+            <div class="field-group">
+              <label>Seção</label>
+              <input id="form:secaoTitulo" name="form:secaoTitulo" type="text" maxlength="4" placeholder="SEÇÃO">
+            </div>
+            <div class="field-group">
+              <label>Passaporte</label>
+              <input id="form:passaporte" name="form:passaporte" type="text" maxlength="20" placeholder="NÚMERO">
+            </div>
+
+            <div class="field-group">
+              <label>Certificado Militar</label>
+              <input id="form:numero_certificadomilitar" name="form:numero_certificadomilitar" type="text" maxlength="20" placeholder="NÚMERO">
+            </div>
+            <div class="field-group">
+              <label>Data Expedição</label>
+              <input id="form:Expedicao_certificadomilitar" name="form:Expedicao_certificadomilitar" type="text" maxlength="10" placeholder="DD/MM/AAAA" oninput="aplicarMascaraData(this);">
+            </div>
+            <div class="field-group">
+              <label>Série / Categoria</label>
+              <div style="display: flex; gap: 0.5rem;">
+                <input id="form:serieMilitar" name="form:serieMilitar" type="text" placeholder="SÉRIE" style="width: 50%;">
+                <input id="form:catMilitar" name="form:catMilitar" type="text" placeholder="CAT" style="width: 50%;">
+              </div>
+            </div>
+            <div class="field-group">
+              <label>Órgão (Militar)</label>
+              <input id="form:orgaoMilitar" name="form:orgaoMilitar" type="text" placeholder="ÓRGÃO">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion locked" id="acc5">
+      <div class="accordion-header" onclick="toggleAccordion('acc5')">
+        <div><span class="icon">📍</span> Endereço e Contato</div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <span class="status incomplete" id="status5">Bloqueado</span>
+          <span class="toggle-icon">▼</span>
+        </div>
+      </div>
+      <div class="accordion-body">
+        <div class="inner">
+          <div class="form-grid">
+            <div class="field-group full-width">
+              <label>Área de procedência (Localização)</label>
+              <div class="radio-group">
+                <label><input type="radio" name="form:zonaResidencia" value="urbana" checked> Zona urbana</label>
+                <label><input type="radio" name="form:zonaResidencia" value="rural"> Zona rural</label>
+              </div>
+            </div>
+            <div class="field-group">
+              <label>CEP <span class="required-mark">*</span></label>
+              <input id="form:endCEP" name="form:endCEP" type="text" maxlength="9" placeholder="00000-000" oninput="aplicarMascaraCEP(this); checkSection('acc5');">
+            </div>
+            <div class="field-group">
+              <label>Logradouro <span class="required-mark">*</span></label>
+              <input id="form:logradouro" name="form:logradouro" type="text" maxlength="70" placeholder="RUA/AVENIDA" oninput="checkSection('acc5')">
+            </div>
+            <div class="field-group">
+              <label>Número <span class="required-mark">*</span></label>
+              <input id="form:endNumero" name="form:endNumero" type="text" maxlength="8" placeholder="Nº" oninput="checkSection('acc5')">
+            </div>
+            <div class="field-group">
+              <label>Complemento</label>
+              <input id="form:endComplemento" name="form:endComplemento" type="text" maxlength="80" placeholder="APTO/BLOCO">
+            </div>
+            <div class="field-group">
+              <label>Bairro <span class="required-mark">*</span></label>
+              <input id="form:endBairro" name="form:endBairro" type="text" maxlength="60" placeholder="BAIRRO" oninput="checkSection('acc5')">
+            </div>
+            <div class="field-group">
+              <label>UF <span class="required-mark">*</span></label>
+              <select id="form:ufEnd" name="form:ufEnd" onchange="atualizarMunicipios('form:ufEnd', 'listaEndMunicipio'); checkSection('acc5');">
+                <option value="-1">-- SELECIONE --</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label>Município <span class="required-mark">*</span></label>
+              <input id="form:endMunicipio" name="form:endMunicipio" list="listaEndMunicipio" placeholder="DIGITE OU SELECIONE" oninput="checkSection('acc5')">
+              <datalist id="listaEndMunicipio"></datalist>
+            </div>
+            
+            <div class="field-group">
+              <label>Tel. Celular <span class="required-mark">*</span></label>
+              <input id="form:telCelNumero" name="form:telCelNumero" type="text" maxlength="9" placeholder="0000-0000" oninput="aplicarMascaraTelefoneSIGAA(this); checkSection('acc5');">
+            </div>
+            <div class="field-group">
+              <label>Tel. Fixo</label>
+              <input id="form:telFixoNumero" name="form:telFixoNumero" type="text" maxlength="9" placeholder="0000-0000" oninput="aplicarMascaraTelefoneSIGAA(this);">
+            </div>
+            
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion locked" id="acc6">
+      <div class="accordion-header" onclick="toggleAccordion('acc6')">
+        <div><span class="icon">♿</span> Dados Complementares & Necessidades Especiais</div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <span class="status incomplete" id="status6">Bloqueado</span>
+          <span class="toggle-icon">▼</span>
+        </div>
+      </div>
+      <div class="accordion-body">
+        <div class="inner">
+          <div class="form-grid" style="margin-bottom: 2rem;">
+            <div class="field-group">
+              <label>Renda per Capita</label>
+              <select id="form:rendaFamiliar" name="form:rendaFamiliar">
+                <option value="1">DE 0,00 A 0,50 SALÁRIO MÍNIMO</option>
+                <option value="2">DE 0,51 A 1,00 SALÁRIO MÍNIMO</option>
+                <option value="3" selected="selected">DE 1,01 A 1,50 SALÁRIO MÍNIMO</option>
+                <option value="4">DE 1,51 A 2,00 SALÁRIOS MÍNIMOS</option>
+                <option value="5">DE 2,01 A 2,50 SALÁRIOS MÍNIMOS</option>
+                <option value="6">DE 2,51 A 3,00 SALÁRIOS MÍNIMOS</option>
+                <option value="7">DE 3,01 A 3,50 SALÁRIOS MÍNIMOS</option>
+                <option value="8">ACIMA DE 3,51 SALÁRIOS MÍNIMOS</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label>Banco</label>
+              <select id="form:contaBanco" name="form:contaBanco">
+                <option value="0">NÃO REGISTRADA</option>
+                <option value="1">BANCO DO BRASIL S.A.</option>
+                <option value="104">CAIXA ECONÔMICA FEDERAL</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label>NIS</label>
+              <input id="form:nis" name="form:nis" type="text" maxlength="20" placeholder="NÚMERO NIS" oninput="this.value = this.value.replace(/\D/g, '')">
+            </div>
+          </div>
+
+          <div class="field-group full-width">
+            <label style="margin-bottom: 0.5rem; font-size: 1.1rem;">Necessidades Especiais Educacionais</label>
+            <div class="checkbox-grid">
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Altas habilidades/superdotação"> Altas habilidades/superdotação</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Ansiedade"> Ansiedade</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Atendimento Domiciliar"> Atendimento Domiciliar</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Autismo"> Autismo</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Baixa Visão"> Baixa Visão</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Baixa de acuidade visual"> Baixa de acuidade visual</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Cegueira"> Cegueira</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Cifose Postural"> Cifose Postural</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Deficiência Física"> Deficiência Física</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Deficiência intelectual"> Deficiência intelectual</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Deficiência múltipla"> Deficiência múltipla</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Deficiência visual"> Deficiência visual</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Deficiente Auditivo"> Deficiente Auditivo</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Depressão"> Depressão</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Dificuldade de Aprendizagem"> Dificuldade de Aprendizagem</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Dislexia"> Dislexia</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Distrofia Miotonica"> Distrofia Miotonica</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Esquizofrenia"> Esquizofrenia</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Fibromialgia"> Fibromialgia</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Física"> Física</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Física/Múltiplas"> Física/Múltiplas</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Hidrocefalia"> Hidrocefalia</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="LÚPUS"> LÚPUS</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="MIOTONIA CONGÊNITA"> MIOTONIA CONGÊNITA</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Nanismo"> Nanismo</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Epilepsia"> Epilepsia</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Neuro"> Neuro</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Outros"> Outros</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Paralisia Cerebral"> Paralisia Cerebral</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Usuário de cadeira de rodas"> Usuário de cadeira de rodas</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="SINDROME GENÉTICA DE SILVER RUSSEL"> SINDROME DE SILVER RUSSEL</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="SURDEZ"> SURDEZ</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Sindrome Turner"> Sindrome Turner</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Síndrome de Asperger"> Síndrome de Asperger</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Síndrome de Rett"> Síndrome de Rett</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Surdez Acentuada"> Surdez Acentuada</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Surdez Moderada"> Surdez Moderada</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Surdez leve"> Surdez leve</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Surdocegueira"> Surdocegueira</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="TDAH"> TDAH</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="TOC E ANSIEDADE"> TOC E ANSIEDADE</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="TOD-Transtorno Opositor e Desafiador"> TOD</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Transtorno Afetivo Bipolar"> Transtorno Bipolar</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Transtorno Desintegrativo da Infância"> Transtorno Desintegrativo</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Transtorno Mental"> Transtorno Mental</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Transtorno Neuropsicomotor"> Transtorno Neuropsicomotor</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Transtorno de Ansiedade Generalizada (TAG)"> TAG</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Transtornos Globais do Desenvolvimento"> TGD</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="Visão subnormal ou baixa visão"> Visão subnormal</label>
+              <label class="checkbox-label"><input type="checkbox" name="necessidade" value="perda auditiva mista"> perda auditiva</label>
+            </div>
+          </div>
+
+          <div class="form-grid" style="margin-top: 1.5rem;">
+            <div class="field-group">
+              <label class="checkbox-label" style="margin-top: 1.5rem;">
+                <input type="checkbox" id="form:deficienciaTemporaria" name="form:deficienciaTemporaria"> Alguma destas deficiências é temporária?
+              </label>
+            </div>
+            <div class="field-group">
+              <label>Data de Emissão do Laudo</label>
+              <input id="form:dataLaudo" name="form:dataLaudo" type="text" maxlength="10" placeholder="DD/MM/AAAA" oninput="aplicarMascaraData(this);">
+            </div>
+          </div>
+          
+          <div style="margin-top: 1.5rem; text-align: right;">
+            <button type="button" class="btn btn-secondary" style="padding: 0.5rem 1.5rem;" onclick="updateSectionStatus('acc6', 'status6', true); forceUnlock('acc7');">Confirmar & Avançar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion locked" id="acc7">
+      <div class="accordion-header" onclick="toggleAccordion('acc7')">
+        <div><span class="icon">🏫</span> Dados do Curso</div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <span class="status incomplete" id="status7">Bloqueado</span>
+          <span class="toggle-icon">▼</span>
+        </div>
+      </div>
+      <div class="accordion-body">
+        <div class="inner">
+          <div class="form-grid">
+            <div class="field-group full-width">
+              <label>Forma de Ingresso <span class="required-mark">*</span></label>
+              <select id="formDiscenteTecnico:formaIngresso" name="formDiscenteTecnico:formaIngresso" onchange="checkSection('acc7')">
+                <option value="0">-- SELECIONE --</option>
+                <option value="301263">CHAMADA PÚBLICA</option>
+                <option value="1">EXAME DE SELEÇÃO</option>
+                <option value="458">EXAME DE SELEÇÃO - AMPLA CONCORRÊNCIA</option>
+                <option value="15651441">SELEÇÃO POR CURRÍCULO - COTA IR-EP (ESCOLA PÚBLICA;INDEPENDENTE DA RENDA)</option>
+                <option value="15651438">SELEÇÃO POR CURRÍCULO - COTA IR-PPI (ESCOLA PÚBLICA;INDEPENDENTE DA RENDA;NEGRO/INDÍGENA)</option>
+                <option value="15651440">SELEÇÃO POR CURRÍCULO - COTA IR-PcD (ESCOLA PÚBLICA;INDEPENDENTE DA RENDA;DEFICIÊNCIA)</option>
+                <option value="15651439">SELEÇÃO POR CURRÍCULO - COTA IR-QI (ESCOLA PÚBLICA;INDEPENDENTE DA RENDA;QUILOMBOLA)</option>
+                <option value="15651437">SELEÇÃO POR CURRÍCULO - COTA RI-EP (ESCOLA PÚBLICA;RENDA INFERIOR)</option>
+                <option value="15651434">SELEÇÃO POR CURRÍCULO - COTA RI-PPI (ESCOLA PÚBLICA;RENDA INFERIOR;NEGRO/INDÍGENA)</option>
+                <option value="15651436">SELEÇÃO POR CURRÍCULO - COTA RI-PcD (ESCOLA PÚBLICA;RENDA INFERIOR;DEFICIÊNCIA)</option>
+                <option value="15651435">SELEÇÃO POR CURRÍCULO - COTA RI-QI (ESCOLA PÚBLICA;RENDA INFERIOR;QUILOMBOLA)</option>
+                <option value="6">EXAME DE SELEÇÃO POR CURRÍCULO</option>
+                <option value="464">EXAME DE SELEÇÃO POR CURRÍCULO - AÇÃO AFIRMATIVA</option>
+                <option value="465">EXAME DE SELEÇÃO POR CURRÍCULO - AMPLA CONCORRÊNCIA</option>
+                <option value="466">EXAME DE SELEÇÃO POR CURRÍCULO - COTA L1 (ESC.PUBL.;RENDA&lt;=1,5;AUTODECLARADO)</option>
+                <option value="467">EXAME DE SELEÇÃO POR CURRÍCULO - COTA L2 (ESC.PUBL.;RENDA&lt;=1,5)</option>
+                <option value="468">EXAME DE SELEÇÃO POR CURRÍCULO - COTA L3 (ESC.PUBL.;RENDA&gt;1,5;AUTODECLARADO)</option>
+                <option value="469">EXAME DE SELEÇÃO POR CURRÍCULO - COTA L4 (ESC.PUBL.;RENDA&gt;1,5)</option>
+                <option value="288495">EXAME DE SELEÇÃO POR CURRÍCULO - COTA L5 (ESC.PUBL;RENDA &lt;=1,5;AUTODECLARADO; PcD)</option>
+                <option value="288496">EXAME DE SELEÇÃO POR CURRÍCULO - COTA L6 (ESC.PUBL;RENDA &lt;=1,5; PcD)</option>
+                <option value="288497">EXAME DE SELEÇÃO POR CURRÍCULO - COTA L7 (ESC.PUBL;RENDA &gt;1,5;AUTODECLARADO; PcD)</option>
+                <option value="288498">EXAME DE SELEÇÃO POR CURRÍCULO - COTA L8 (ESC.PUBL;RENDA &gt;1,5; PcD)</option>
+                <option value="470">EXAME DE SELEÇÃO POR CURRÍCULO - PESSOA COM DEFICIÊNCIA</option>
+                <option value="452">CONVÊNIO DE COOPERAÇÃO - AMPLA CONCORRÊNCIA</option>
+                <option value="15651449">CONVÊNIO DE COOPERAÇÃO - COTA IR-EP (ESCOLA PÚBLICA;INDEPENDENTE DA RENDA)</option>
+                <option value="15651446">CONVÊNIO DE COOPERAÇÃO - COTA IR-PPI (ESCOLA PÚBLICA;INDEPENDENTE DA RENDA;NEGRO/INDÍGENA)</option>
+                <option value="15651448">CONVÊNIO DE COOPERAÇÃO - COTA IR-PcD (ESCOLA PÚBLICA;INDEPENDENTE DA RENDA;DEFICIÊNCIA)</option>
+                <option value="15651447">CONVÊNIO DE COOPERAÇÃO - COTA IR-QI (ESCOLA PÚBLICA;INDEPENDENTE DA RENDA;QUILOMBOLA)</option>
+                <option value="453">CONVÊNIO DE COOPERAÇÃO - COTA L1 (ESC.PUBL.;RENDA&lt;=1,5;AUTODECLARADO)</option>
+                <option value="454">CONVÊNIO DE COOPERAÇÃO - COTA L2 (ESC.PUBL.;RENDA&lt;=1,5)</option>
+                <option value="455">CONVÊNIO DE COOPERAÇÃO - COTA L3 (ESC.PUBL.;RENDA&gt;1,5;AUTODECLARADO)</option>
+                <option value="456">CONVÊNIO DE COOPERAÇÃO - COTA L4 (ESC.PUBL.;RENDA&gt;1,5)</option>
+                <option value="288487">CONVÊNIO DE COOPERAÇÃO - COTA L5 (ESC.PUBL;RENDA &lt;=1,5;AUTODECLARADO; PcD)</option>
+                <option value="288488">CONVÊNIO DE COOPERAÇÃO - COTA L6 (ESC.PUBL;RENDA &lt;=1,5; PcD)</option>
+                <option value="288489">CONVÊNIO DE COOPERAÇÃO - COTA L7 (ESC.PUBL;RENDA &gt;1,5;AUTODECLARADO; PcD)</option>
+                <option value="288490">CONVÊNIO DE COOPERAÇÃO - COTA L8 (ESC.PUBL;RENDA &gt;1,5; PcD)</option>
+                <option value="15651445">CONVÊNIO DE COOPERAÇÃO - COTA RI-EP (ESCOLA PÚBLICA;RENDA INFERIOR)</option>
+                <option value="15651442">CONVÊNIO DE COOPERAÇÃO - COTA RI-PPI (ESCOLA PÚBLICA;RENDA INFERIOR;NEGRO/INDÍGENA)</option>
+                <option value="15651444">CONVÊNIO DE COOPERAÇÃO - COTA RI-PcD (ESCOLA PÚBLICA;RENDA INFERIOR;DEFICIÊNCIA)</option>
+                <option value="15651443">CONVÊNIO DE COOPERAÇÃO - COTA RI-QI (ESCOLA PÚBLICA;RENDA INFERIOR;QUILOMBOLA)</option>
+                <option value="4">DEPENDÊNCIA CONSANGUÍNEA</option>
+                <option value="457">EXAME DE SELEÇÃO - AÇÃO AFIRMATIVA</option>
+                <option value="15651425">EXAME DE SELEÇÃO - COTA IR-EP (ESCOLA PÚBLICA;INDEPENDENTE DA RENDA)</option>
+                <option value="15651422">EXAME DE SELEÇÃO - COTA IR-PPI (ESCOLA PÚBLICA;INDEPENDENTE DA RENDA;NEGRO/INDÍGENA)</option>
+                <option value="15651424">EXAME DE SELEÇÃO - COTA IR-PcD (ESCOLA PÚBLICA;INDEPENDENTE DA RENDA;DEFICIÊNCIA)</option>
+                <option value="15651423">EXAME DE SELEÇÃO - COTA IR-QI (ESCOLA PÚBLICA;INDEPENDENTE DA RENDA;QUILOMBOLA)</option>
+                <option value="459">EXAME DE SELEÇÃO - COTA L1 (ESC.PUBL.;RENDA&lt;=1,5;AUTODECLARADO)</option>
+                <option value="460">EXAME DE SELEÇÃO - COTA L2 (ESC.PUBL.;RENDA&lt;=1,5)</option>
+                <option value="461">EXAME DE SELEÇÃO - COTA L3 (ESC.PUBL.;RENDA&gt;1,5;AUTODECLARADO)</option>
+                <option value="462">EXAME DE SELEÇÃO - COTA L4 (ESC.PUBL.;RENDA&gt;1,5)</option>
+                <option value="288491">EXAME DE SELEÇÃO - COTA L5 (ESC.PUBL;RENDA &lt;=1,5;AUTODECLARADO; PcD)</option>
+                <option value="288492">EXAME DE SELEÇÃO - COTA L6 (ESC.PUBL;RENDA &lt;=1,5; PcD)</option>
+                <option value="288493">EXAME DE SELEÇÃO - COTA L7 (ESC.PUBL;RENDA &gt;1,5;AUTODECLARADO; PcD)</option>
+                <option value="288494">EXAME DE SELEÇÃO - COTA L8 (ESC.PUBL;RENDA &gt;1,5; PcD)</option>
+                <option value="15651421">EXAME DE SELEÇÃO - COTA RI-EP (ESCOLA PÚBLICA;RENDA INFERIOR)</option>
+                <option value="15651418">EXAME DE SELEÇÃO - COTA RI-PPI (ESCOLA PÚBLICA;RENDA INFERIOR;NEGRO/INDÍGENA)</option>
+                <option value="15651420">EXAME DE SELEÇÃO - COTA RI-PcD (ESCOLA PÚBLICA;RENDA INFERIOR;DEFICIÊNCIA)</option>
+                <option value="15651419">EXAME DE SELEÇÃO - COTA RI-QI (ESCOLA PÚBLICA;RENDA INFERIOR;QUILOMBOLA)</option>
+                <option value="463">EXAME DE SELEÇÃO - PESSOA COM DEFICIÊNCIA</option>
+                <option value="7">EXAME DE SELEÇÃO POR SORTEIO</option>
+                <option value="471">EXAME DE SELEÇÃO POR SORTEIO - AÇÃO AFIRMATIVA</option>
+                <option value="472">EXAME DE SELEÇÃO POR SORTEIO - AMPLA CONCORRÊNCIA</option>
+                <option value="473">EXAME DE SELEÇÃO POR SORTEIO - COTA L1 (ESC.PUBL.;RENDA&lt;=1,5;AUTODECLARADO)</option>
+                <option value="474">EXAME DE SELEÇÃO POR SORTEIO - COTA L2 (ESC.PUBL.;RENDA&lt;=1,5)</option>
+                <option value="475">EXAME DE SELEÇÃO POR SORTEIO - COTA L3 (ESC.PUBL.;RENDA&gt;1,5;AUTODECLARADO)</option>
+                <option value="476">EXAME DE SELEÇÃO POR SORTEIO - COTA L4 (ESC.PUBL.;RENDA&gt;1,5)</option>
+                <option value="288499">EXAME DE SELEÇÃO POR SORTEIO - COTA L5 (ESC.PUBL;RENDA &lt;=1,5;AUTODECLARADO; PcD)</option>
+                <option value="288500">EXAME DE SELEÇÃO POR SORTEIO - COTA L6 (ESC.PUBL;RENDA &lt;=1,5; PcD)</option>
+                <option value="288501">EXAME DE SELEÇÃO POR SORTEIO - COTA L7 (ESC.PUBL;RENDA &gt;1,5;AUTODECLARADO; PcD)</option>
+                <option value="288502">EXAME DE SELEÇÃO POR SORTEIO - COTA L8 (ESC.PUBL;RENDA &gt;1,5; PcD)</option>
+                <option value="477">EXAME DE SELEÇÃO POR SORTEIO - PESSOA COM DEFICIÊNCIA</option>
+                <option value="15651414">Mobilidade - Portador de Diploma de Graduação</option>
+                <option value="15651417">Mobilidade - Transferência Externa</option>
+                <option value="15651412">Mobilidade - Transferência Interna</option>
+                <option value="9">PROCESSO SELETIVO SISU</option>
+                <option value="10">PROCESSO SELETIVO SISUTEC</option>
+                <option value="3">RETORNO DE PROCESSO</option>
+                <option value="13">SELEÇÃO MULHERES MIL</option>
+                <option value="12">SELEÇÃO MULHERES MIL/PRONATEC</option>
+                <option value="11">SELEÇÃO PRONATEC</option>
+                <option value="333883">SISU - AÇÃO AFIRMATIVA</option>
+                <option value="333882">SISU - AMPLA CONCORRÊNCIA</option>
+                <option value="15651433">SISU - COTA IR-EP (ESCOLA PÚBLICA;INDEPENDENTE DA RENDA)</option>
+                <option value="15651430">SISU - COTA IR-PPI (ESCOLA PÚBLICA;INDEPENDENTE DA RENDA;NEGRO/INDÍGENA)</option>
+                <option value="15651432">SISU - COTA IR-PcD (ESCOLA PÚBLICA;INDEPENDENTE DA RENDA;DEFICIÊNCIA)</option>
+                <option value="15651431">SISU - COTA IR-QI (ESCOLA PÚBLICA;INDEPENDENTE DA RENDA;QUILOMBOLA)</option>
+                <option value="288503">SISU - COTA L1 (ESC.PUBL;RENDA &lt;=1,5;AUTODECLARADO)</option>
+                <option value="288504">SISU - COTA L2 (ESC.PUBL;RENDA &lt;=1,5)</option>
+                <option value="288505">SISU - COTA L3 (ESC.PUBL;RENDA &gt;1,5;AUTODECLARADO)</option>
+                <option value="288506">SISU - COTA L4 (ESC.PUBL;RENDA &gt;1,5)</option>
+                <option value="288507">SISU - COTA L5 (ESC.PUBL;RENDA &lt;=1,5;AUTODECLARADO; PcD)</option>
+                <option value="288508">SISU - COTA L6 (ESC.PUBL;RENDA &lt;=1,5; PcD)</option>
+                <option value="288509">SISU - COTA L7 (ESC.PUBL;RENDA &gt;1,5;AUTODECLARADO; PcD)</option>
+                <option value="288510">SISU - COTA L8 (ESC.PUBL;RENDA &gt;1,5; PcD)</option>
+                <option value="15651429">SISU - COTA RI-EP (ESCOLA PÚBLICA;RENDA INFERIOR)</option>
+                <option value="15651426">SISU - COTA RI-PPI (ESCOLA PÚBLICA;RENDA INFERIOR;NEGRO/INDÍGENA)</option>
+                <option value="15651428">SISU - COTA RI-PcD (ESCOLA PÚBLICA;RENDA INFERIOR;DEFICIÊNCIA)</option>
+                <option value="15651427">SISU - COTA RI-QI (ESCOLA PÚBLICA;RENDA INFERIOR;QUILOMBOLA)</option>
+                <option value="2">TRANSFERÊNCIA</option>
+                <option value="5">VESTIBULINHO</option>
+              </select>
+            </div>
+
+            <div class="field-group">
+              <label>Concluiu o ensino médio? <span class="required-mark">*</span></label>
+              <div class="radio-group" style="margin-top: 0.5rem;">
+                <label><input type="radio" name="form:concluiuMedio" value="SIM" checked onchange="checkSection('acc7')"> Sim</label>
+                <label><input type="radio" name="form:concluiuMedio" value="NAO" onchange="checkSection('acc7')"> Não</label>
+              </div>
+            </div>
+          </div>
+          
+          <div style="margin-top: 1.5rem; text-align: right;">
+            <button type="button" class="btn btn-primary" style="padding: 0.5rem 1.5rem;" onclick="updateSectionStatus('acc7', 'status7', true);">Concluir Formulário</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </form>
+</div>
+
+<!-- Modal inicial para configurar o curso -->
+<div id="initialModal" class="modal-overlay" style="display: none;">
+  <div class="modal-content">
+    <h3>🔧 Configuração do Curso (Cadastro sequencial)</h3>
+    <p>Preencha os dados abaixo para iniciar o cadastro de alunos. Eles serão bloqueados e usados em todos os registros.</p>
+    <div class="modal-fields">
+      <div class="field-group">
+        <label>Curso *</label>
+        <input type="text" id="modalCurso" placeholder="Ex: TÉCNICO EM INFORMÁTICA">
+      </div>
+      <div class="field-group">
+        <label>Currículo *</label>
+        <input type="text" id="modalCurriculo" placeholder="Ex: INFO-2026">
+      </div>
+      <div class="field-group">
+        <label>Turma de Entrada *</label>
+        <input type="text" id="modalTurma" placeholder="Ex: 2026.1">
+      </div>
+      <div class="field-group">
+        <label>Regime do Aluno *</label>
+        <input type="text" id="modalRegime" placeholder="Ex: SEMESTRAL">
+      </div>
+    </div>
+    <div class="modal-buttons">
+      <button class="btn btn-secondary" onclick="fecharModalCurso()">Fechar</button>
+      <button class="btn btn-primary" onclick="saveModalAndLock()">Travar e Iniciar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Dashboard com edição -->
+<div id="dashboardModal" class="dashboard-overlay" style="display: none;">
+  <div class="dashboard-content form-container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h2>🗃️ Cadastros Salvos</h2>
+      <button class="btn btn-secondary" onclick="fecharDashboard()" style="padding: 0.4rem 1rem;">Fechar</button>
+    </div>
+    <div class="table-responsive">
+      <table id="tabelaAlunos">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>CPF</th>
+            <th>Nome Oficial</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaAlunosBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Toast de notificação -->
+<div id="toastMessage" class="toast-message"></div>
+
+<!-- Modal de confirmação personalizado -->
+<div id="confirmModal" class="modal-overlay" style="display: none;">
+  <div class="modal-content" style="max-width: 400px;">
+    <h3>Confirmar</h3>
+    <p id="confirmMessage">Tem certeza?</p>
+    <div class="modal-buttons" style="justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
+      <button class="btn btn-secondary" id="confirmNoBtn">Cancelar</button>
+      <button class="btn btn-primary" id="confirmYesBtn">Sim</button>
+    </div>
+  </div>
+</div>
+
+<script src="./js/script.js"></script>
+</body>
+</html>
