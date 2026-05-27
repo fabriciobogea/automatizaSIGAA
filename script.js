@@ -113,9 +113,12 @@ function replicateToSocial() {
   if (social.dataset.manual !== 'true') social.value = oficial.value;
 }
 
-document.getElementById('form:nome')?.addEventListener('input', function() {
-  this.dataset.manual = (this.value !== document.getElementById('form:nomeOficial').value) ? 'true' : 'false';
-});
+const nomeSocialInput = document.getElementById('form:nome');
+if (nomeSocialInput) {
+  nomeSocialInput.addEventListener('input', function() {
+    this.dataset.manual = (this.value !== document.getElementById('form:nomeOficial').value) ? 'true' : 'false';
+  });
+}
 
 function isFilled(elem) {
   if (!elem) return false;
@@ -164,6 +167,31 @@ function checkSection(accId) {
     updateSectionStatus('acc4', 'status4', completo);
     if (completo) forceUnlock('acc5');
   }
+  else if (accId === 'acc3') {
+    const exigencia = document.getElementById('acc3')?.dataset.exigencia;
+    if (!exigencia) {
+      completo = false;
+    } else if (exigencia === 'fundamental') {
+      const anoFund = document.getElementById('form:anoFund');
+      const escolaFund = document.getElementById('form:escolaFund');
+      const tipoFund = document.getElementById('form:tipoEscolaFund');
+      completo = isFilled(anoFund) && isFilled(escolaFund) && isFilled(tipoFund);
+    } else if (exigencia === 'medio') {
+      const anoMedio = document.getElementById('form:anoMedio');
+      const escolaMedio = document.getElementById('form:escolaMedio');
+      const tipoMedio = document.getElementById('form:tipoEscolaMedio');
+      completo = isFilled(anoMedio) && isFilled(escolaMedio) && isFilled(tipoMedio);
+    } else if (exigencia === 'superior') {
+      const anoSup = document.getElementById('form:anoSup');
+      const instSup = document.getElementById('form:instSup');
+      const tipoSup = document.getElementById('form:tipoInstSup');
+      completo = isFilled(anoSup) && isFilled(instSup) && isFilled(tipoSup);
+    } else {
+      completo = false;
+    }
+    updateSectionStatus('acc3', 'status3', completo);
+    if (completo) forceUnlock('acc4');
+  }
   else if (accId === 'acc5') {
     const cep = document.getElementById('form:endCEP');
     const logr = document.getElementById('form:logradouro');
@@ -208,7 +236,15 @@ function updateSectionStatus(accId, statusId, complete) {
 
 function forceUnlock(id) {
   const acc = document.getElementById(id);
-  if (acc && acc.classList.contains('locked')) {
+  if (!acc) return;
+  
+  // Impede desbloqueio da acc3 se não houver nível selecionado
+  if (id === 'acc3') {
+    const nivel = document.getElementById('nivelCurso')?.value;
+    if (!nivel) return;
+  }
+
+  if (acc.classList.contains('locked')) {
     acc.classList.remove('locked');
     const statusId = 'status' + id.replace('acc', '');
     const statusEl = document.getElementById(statusId);
@@ -261,7 +297,6 @@ function loadCourseConfig() {
     courseLocked = config.locked || false;
     applyLockState();
   } else {
-    // Não mostra o modal automaticamente - apenas deixa os campos livres
     courseLocked = false;
     applyLockState();
   }
@@ -322,6 +357,69 @@ function saveModalAndLock() {
   saveCourseConfig();
   fecharModalCurso();
   showMessage('Curso configurado e travado com sucesso!', 'success');
+}
+
+// ==================== LÓGICA DE MOSTRAR OS CAMPOS CONFORME O NÍVEL ====================
+function atualizarExigenciaEscolar() {
+  const nivel = document.getElementById('nivelCurso').value;
+  const acc3 = document.getElementById('acc3');
+  if (!acc3) return;
+
+  const cardFundamental = document.querySelector('#acc3 .edu-cards-container .edu-card:first-child');
+  const cardMedio = document.querySelector('#acc3 .edu-cards-container .edu-card:nth-child(2)');
+  const cardSuperior = document.querySelector('#acc3 .edu-cards-container .edu-card:nth-child(3)');
+
+  // Salva o nível escolhido para persistir
+  localStorage.setItem('nivelCursoTemporario', nivel);
+
+  // Se não há nível selecionado, bloqueia a seção e mostra todos os cards
+  if (!nivel) {
+    if (cardFundamental) cardFundamental.style.display = 'flex';
+    if (cardMedio) cardMedio.style.display = 'flex';
+    if (cardSuperior) cardSuperior.style.display = 'flex';
+    acc3.dataset.exigencia = '';
+    if (!acc3.classList.contains('locked')) {
+      acc3.classList.add('locked');
+      updateSectionStatus('acc3', 'status3', false);
+    }
+    return;
+  }
+
+  // Se tem nível, desbloqueia a seção (caso esteja bloqueada)
+  if (acc3.classList.contains('locked')) {
+    acc3.classList.remove('locked');
+    const statusEl = document.getElementById('status3');
+    if (statusEl && statusEl.textContent === 'Bloqueado') {
+      statusEl.textContent = 'Pendente';
+      statusEl.className = 'status incomplete';
+    }
+  }
+
+  // Mostra todos inicialmente
+  if (cardFundamental) cardFundamental.style.display = 'flex';
+  if (cardMedio) cardMedio.style.display = 'flex';
+  if (cardSuperior) cardSuperior.style.display = 'flex';
+
+  if (nivel === 'fic' || nivel === 'tecnico') {
+    if (cardMedio) cardMedio.style.display = 'none';
+    if (cardSuperior) cardSuperior.style.display = 'none';
+    acc3.dataset.exigencia = 'fundamental';
+  } 
+  else if (nivel === 'subsequente' || nivel === 'superior') {
+    if (cardFundamental) cardFundamental.style.display = 'none';
+    if (cardSuperior) cardSuperior.style.display = 'none';
+    acc3.dataset.exigencia = 'medio';
+  }
+  else if (nivel === 'pos') {
+    if (cardFundamental) cardFundamental.style.display = 'none';
+    if (cardMedio) cardMedio.style.display = 'none';
+    acc3.dataset.exigencia = 'superior';
+  }
+  else {
+    acc3.dataset.exigencia = '';
+  }
+
+  checkSection('acc3');
 }
 
 // ==================== EDIÇÃO DE CADASTROS ====================
@@ -394,7 +492,7 @@ function validateAll() {
     return;
   }
 
-  const idsObrigatorios = ['status1', 'status2', 'status4', 'status5', 'status7']; 
+  const idsObrigatorios = ['status1', 'status2', 'status3', 'status4', 'status5', 'status7']; 
   let allValid = true;
   idsObrigatorios.forEach(id => {
     if(document.getElementById(id).textContent !== 'Concluído') allValid = false;
@@ -598,5 +696,22 @@ window.onload = () => {
   checkSection('acc1');
   for(let i = 2; i <= 7; i++) {
     forceUnlock('acc' + i);
+  }
+  
+  // Inicializa a exibição do histórico escolar baseado no nível salvo
+  const nivelSalvo = localStorage.getItem('nivelCursoTemporario');
+  if (nivelSalvo) {
+    const selectNivel = document.getElementById('nivelCurso');
+    if (selectNivel) {
+      selectNivel.value = nivelSalvo;
+      atualizarExigenciaEscolar();
+    }
+  } else {
+    // Se não há nível salvo, garante que a acc3 fique bloqueada
+    const acc3 = document.getElementById('acc3');
+    if (acc3 && !acc3.classList.contains('locked')) {
+      acc3.classList.add('locked');
+      updateSectionStatus('acc3', 'status3', false);
+    }
   }
 };

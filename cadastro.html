@@ -53,6 +53,18 @@
         <label>Regime do Aluno <span class="required-mark">*</span></label>
         <input type="text" id="fixedRegime" placeholder="Ex: SEMESTRAL">
       </div>
+      <!-- NOVO CAMPO: Nível de Ensino (apenas para controle de interface) -->
+      <div class="field-group">
+        <label>Nível do Curso <span class="required-mark">*</span></label>
+        <select id="nivelCurso" onchange="atualizarExigenciaEscolar()">
+          <option value="">-- SELECIONE --</option>
+          <option value="fic">FIC (Ensino Fundamental)</option>
+          <option value="tecnico">Técnico (Ensino Fundamental)</option>
+          <option value="subsequente">Subsequente (Ensino Médio)</option>
+          <option value="superior">Superior (Ensino Médio)</option>
+          <option value="pos">Pós-Graduação (Graduação)</option>
+        </select>
+      </div>
     </div>
   </div>
 
@@ -296,7 +308,7 @@
             </div>
           </div>
           <div style="margin-top: 2rem; text-align: right;">
-            <button type="button" class="btn btn-secondary" style="padding: 0.5rem 1.5rem;" onclick="forceUnlock('acc4'); updateSectionStatus('acc3', 'status3', true);">Confirmar & Avançar</button>
+            <button type="button" class="btn btn-secondary" style="padding: 0.5rem 1.5rem;" onclick="checkSection('acc3'); if(document.getElementById('status3').textContent === 'Concluído') forceUnlock('acc4'); else showMessage('Preencha os campos exigidos para o nível selecionado.', 'error');">Confirmar & Avançar</button>
           </div>
         </div>
       </div>
@@ -776,7 +788,7 @@
 <!-- Modal de confirmação personalizado -->
 <div id="confirmModal" class="modal-overlay" style="display: none;">
   <div class="modal-content" style="max-width: 400px;">
-    <h3 id="confirmTitle">Confirmar</h3>
+    <h3>Confirmar</h3>
     <p id="confirmMessage">Tem certeza?</p>
     <div class="modal-buttons" style="justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
       <button class="btn btn-secondary" id="confirmNoBtn">Cancelar</button>
